@@ -1,0 +1,7 @@
+{
+  "name": "Color Duel",
+  "description": "Two players. The same unfinished picture. Different decisions. Who can color smarter? Featuring Smart Duel, Memory Duel, Studio, and AI challenges.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
