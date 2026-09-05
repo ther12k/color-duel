@@ -117,7 +117,7 @@ export function DuelGameScreen({
   useEffect(() => {
     if (!hasStarted) return;
     if (isGameOverRef.current) return;
-    if (mode === 'studio') return;
+    if (mode === 'studio' || mode === 'solo') return;
 
     // Determine interval speed based on rival speed factor
     const fillIntervalMs = Math.round(1800 / rival.speedFactor);
@@ -273,14 +273,15 @@ export function DuelGameScreen({
       finalPlayerCorrect * 10 + finalBonuses * 30 - finalMistakes * 5;
     const finalRivalScore = rival.score;
 
-    const isWin = finalPlayerScore > finalRivalScore;
-    const isDraw = finalPlayerScore === finalRivalScore;
+    const isWin = mode === 'solo' ? true : finalPlayerScore > finalRivalScore;
+    const isDraw = mode === 'solo' ? false : finalPlayerScore === finalRivalScore;
+    const starsEarned = playerAccuracy >= 90 ? 3 : playerAccuracy >= 75 ? 2 : 1;
 
     // Generate concrete tactical explanation matching user requirement:
-    // "After each match, give one concrete explanation of the result:
-    // 'You filled four more regions, but your opponent earned two deadline bonuses.'"
     let whyExplanation = '';
-    if (isWin) {
+    if (mode === 'solo') {
+      whyExplanation = `Masterpiece restored! You discovered and restored all ${finalPlayerCorrect} polygon boxes with ${playerAccuracy}% accuracy!`;
+    } else if (isWin) {
       if (finalPlayerCorrect < rivalTotalCorrect && finalBonuses > rivalBonuses) {
         whyExplanation = `You filled fewer regions (${finalPlayerCorrect} vs ${rivalTotalCorrect}), but earned ${finalBonuses} deadline bonus objectives, which gave you the edge!`;
       } else if (finalMistakes < rival.mistakes) {
@@ -323,6 +324,7 @@ export function DuelGameScreen({
       xpEarned: isWin ? 80 : 35,
       rivalName: rival.name,
       rivalAvatar: rival.avatar,
+      starsEarned,
     };
 
     onFinishMatch(result);
@@ -339,7 +341,7 @@ export function DuelGameScreen({
   };
 
   const handleToggleZoom = () => {
-    setZoomLevel((z) => (z > 1 ? 1 : 1.4));
+    setZoomLevel((z) => (z >= 2.5 ? 1 : z === 1 ? 1.8 : 2.8));
   };
 
   // 7. Memory Duel Peek
@@ -389,11 +391,20 @@ export function DuelGameScreen({
           timeLeft={timeLeft}
           totalTime={MATCH_DURATION}
           mode={mode}
+          filledCount={filledRegionIds.length}
+          totalCount={artwork.regions.length}
+          accuracy={
+            filledRegionIds.length + playerMistakes > 0
+              ? Math.round(
+                  (filledRegionIds.length / (filledRegionIds.length + playerMistakes)) * 100
+                )
+              : 100
+          }
           onExit={onExit}
         />
 
         {/* Bonus Objectives with Timed Deadlines */}
-        {mode !== 'studio' && (
+        {mode !== 'studio' && mode !== 'solo' && (
           <BonusObjectivesBar
             objectives={artwork.objectives}
             completedObjectiveIds={completedObjectiveIds}
@@ -403,20 +414,35 @@ export function DuelGameScreen({
         )}
 
         {/* Area Progress duel indicator */}
-        {mode !== 'studio' && (
+        {mode !== 'studio' && mode !== 'solo' ? (
           <AreaProgressBar
             user={user}
             rival={rival}
             playerPercent={playerPercent}
             rivalPercent={rivalPercent}
           />
+        ) : (
+          <div className="px-3.5 py-1.5 bg-white/90 border-b border-slate-100 flex items-center justify-between shadow-2xs">
+            <span className="text-xs font-display font-bold text-slate-700">
+              Masterpiece Restoration
+            </span>
+            <div className="flex items-center gap-2">
+              <div className="w-28 h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-purple-500 to-indigo-600 transition-all duration-300 rounded-full"
+                  style={{ width: `${playerPercent}%` }}
+                />
+              </div>
+              <span className="text-xs font-bold text-purple-700">{playerPercent}%</span>
+            </div>
+          </div>
         )}
       </div>
 
       {/* Center Canvas Stage */}
       <div className="relative flex-1 flex items-center justify-center p-2.5 overflow-hidden">
         {/* Floating Live Rival Event Toast */}
-        <LiveEventToast toast={liveToast} />
+        {mode !== 'solo' && <LiveEventToast toast={liveToast} />}
 
         {/* Memory Mode Peek Control */}
         {mode === 'memory-duel' && (
@@ -441,6 +467,7 @@ export function DuelGameScreen({
           correctClickPos={correctClickPos}
           zoomLevel={zoomLevel}
           onRegionClick={handleRegionClick}
+          onZoomChange={setZoomLevel}
         />
       </div>
 

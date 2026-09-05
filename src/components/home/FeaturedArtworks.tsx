@@ -1,5 +1,6 @@
 import { Heart, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { Artwork } from '../../types/game';
+import { ArtworkThumbnail } from '../common/ArtworkThumbnail';
 
 interface FeaturedArtworksProps {
   artworks: Artwork[];
@@ -40,10 +41,9 @@ export function FeaturedArtworks({
               className="group bg-white rounded-2xl p-2 border border-slate-100 shadow-xs hover:shadow-md transition-all cursor-pointer active:scale-[0.98] flex flex-col"
             >
               {/* Artwork Preview Card */}
-              <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-slate-100">
-                <img
-                  src={art.thumbnail}
-                  alt={art.title}
+              <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-slate-100 border border-slate-100">
+                <ArtworkThumbnail
+                  artwork={art}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
 

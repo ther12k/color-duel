@@ -3,7 +3,10 @@ export type GameMode =
   | 'speed-duel'
   | 'memory-duel'
   | 'palette-puzzle'
-  | 'studio';
+  | 'studio'
+  | 'solo';
+
+export type ArtworkDifficulty = 'Easy' | 'Medium' | 'Hard';
 
 export interface ColorPaletteItem {
   number: number;
@@ -36,13 +39,18 @@ export interface Artwork {
   id: string;
   title: string;
   subtitle?: string;
-  category: 'Cozy' | 'Fantasy' | 'Nature' | 'Characters';
+  artist?: string;
+  category: 'Cozy' | 'Fantasy' | 'Nature' | 'Characters' | 'Masterpiece';
   likes: string;
   thumbnail: string;
   palette: ColorPaletteItem[];
   regions: ArtworkRegion[];
   objectives: BonusObjective[];
-  difficulty: 'Fewer Details' | 'Medium Details' | 'Larger Regions';
+  difficulty: ArtworkDifficulty;
+  paintingStyle?: 'vector' | 'original-painting';
+  paintingBackground?: string;
+  detailNote?: string;
+  hiddenPolygonsCount?: number;
   viewBox: string;
   defaultDurationSeconds: number;
   isDaily?: boolean;
@@ -87,6 +95,8 @@ export interface DuelResult {
   isDraw: boolean;
   rivalName: string;
   rivalAvatar: string;
+  starsEarned?: number;
+  coloringOrder?: string[];
 }
 
 export interface UserProfile {

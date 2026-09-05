@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { X, Play, Swords, Zap, Brain, Palette } from 'lucide-react';
+import { X, Play, Sparkles } from 'lucide-react';
 import { Artwork, GameMode } from '../../types/game';
 import { cn } from '../../lib/utils';
+import { ArtworkThumbnail } from './ArtworkThumbnail';
 
 interface ArtworkPlayModalProps {
   artwork: Artwork;
@@ -14,38 +15,47 @@ export function ArtworkPlayModal({
   onClose,
   onStartGame,
 }: ArtworkPlayModalProps) {
-  const [selectedMode, setSelectedMode] = useState<GameMode>('smart-duel');
+  const [selectedMode, setSelectedMode] = useState<GameMode>('solo');
 
   const modes = [
     {
-      id: 'smart-duel' as GameMode,
-      title: 'Smart Duel',
-      desc: 'Ranked VS match with objective deadlines',
-      badge: 'Flagship',
-      icon: '👑',
+      id: 'solo' as GameMode,
+      title: 'Solo Mode',
+      desc: 'No opponent. Zoom in to locate and fill hidden numbers at your pace',
+      badge: 'Popular',
+      icon: '🎨',
     },
     {
-      id: 'speed-duel' as GameMode,
-      title: 'Speed Duel',
-      desc: 'Race to finish the entire picture first',
-      badge: 'Fast',
-      icon: '⚡',
+      id: 'smart-duel' as GameMode,
+      title: 'Smart Duel',
+      desc: 'Ranked VS match with objective deadlines and live scoring',
+      badge: 'Arena',
+      icon: '👑',
     },
     {
       id: 'memory-duel' as GameMode,
       title: 'Memory Duel',
-      desc: 'Preview for 8s, then color with no numbers',
+      desc: 'Preview for 8s, numbers disappear! Test visual recall',
       badge: 'Recall',
       icon: '🧠',
     },
     {
+      id: 'speed-duel' as GameMode,
+      title: 'Speed Duel',
+      desc: 'Fast sprint: who can finish all regions first?',
+      badge: 'Race',
+      icon: '⚡',
+    },
+    {
       id: 'studio' as GameMode,
       title: 'Studio Relax',
-      desc: 'No opponent, no timer. Enjoy the art',
-      badge: 'Cozy',
+      desc: 'No opponent, no timer. Pure zen coloring bliss',
+      badge: 'Zen',
       icon: '🐱',
     },
   ];
+
+  const isHard = artwork.difficulty === 'Hard';
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/65 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -56,6 +66,7 @@ export function ArtworkPlayModal({
             Choose Game Mode
           </h3>
           <button
+            type="button"
             onClick={onClose}
             className="text-slate-400 hover:text-slate-600 p-1 -mr-1 transition-colors cursor-pointer"
           >
@@ -64,24 +75,45 @@ export function ArtworkPlayModal({
         </div>
 
         {/* Artwork summary */}
-        <div className="flex items-center gap-3 my-3 p-2 bg-slate-50 rounded-2xl border border-slate-100">
-          <img
-            src={artwork.thumbnail}
-            alt={artwork.title}
-            className="w-16 h-16 rounded-xl object-cover border border-slate-200"
-          />
-          <div>
-            <h4 className="font-display font-bold text-slate-900 text-sm">
+        <div className="flex items-center gap-3 my-3 p-2.5 bg-slate-50 rounded-2xl border border-slate-100">
+          <div className="w-16 h-16 rounded-xl overflow-hidden border border-slate-200 shrink-0 bg-white">
+            <ArtworkThumbnail artwork={artwork} className="w-full h-full object-cover" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h4 className="font-display font-bold text-slate-900 text-sm truncate">
               {artwork.title}
             </h4>
-            <p className="text-xs text-slate-500 font-sans mt-0.5">
-              {artwork.category} · {artwork.difficulty}
-            </p>
-            <p className="text-[11px] text-slate-400 font-sans">
+            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+              <span
+                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                  isHard
+                    ? 'bg-purple-100 text-purple-800'
+                    : artwork.difficulty === 'Medium'
+                    ? 'bg-amber-100 text-amber-800'
+                    : 'bg-emerald-100 text-emerald-800'
+                }`}
+              >
+                {artwork.difficulty} Level
+              </span>
+              <span className="text-[10.5px] text-slate-500 font-sans">
+                {artwork.category}
+              </span>
+            </div>
+            <p className="text-[10.5px] text-slate-400 font-sans mt-0.5">
               {artwork.regions.length} regions · {artwork.palette.length} colors
             </p>
           </div>
         </div>
+
+        {/* Hard Level Masterpiece Banner */}
+        {isHard && (
+          <div className="mb-3 p-2 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border border-purple-200/80 flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-purple-600 shrink-0" />
+            <p className="text-[11px] text-purple-900 font-sans leading-tight">
+              <strong>Original Painting:</strong> Zoom in on the canvas to find hidden polygon boxes and numbers!
+            </p>
+          </div>
+        )}
 
         {/* Mode list */}
         <div className="space-y-2 mb-4">
@@ -99,9 +131,9 @@ export function ArtworkPlayModal({
                     : 'bg-white border-slate-200 hover:border-slate-300'
                 )}
               >
-                <div className="flex items-center gap-2.5">
-                  <span className="text-xl">{m.icon}</span>
-                  <div>
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="text-xl shrink-0">{m.icon}</span>
+                  <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span className="font-display font-bold text-xs text-slate-800">
                         {m.title}
@@ -133,6 +165,7 @@ export function ArtworkPlayModal({
 
         {/* Start Button */}
         <button
+          type="button"
           id="modal-start-game-btn"
           onClick={() => onStartGame(artwork, selectedMode)}
           className="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-amber-950 font-display font-black text-sm shadow-md shadow-amber-500/25 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
