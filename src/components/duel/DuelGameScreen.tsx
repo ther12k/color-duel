@@ -123,6 +123,14 @@ export function DuelGameScreen({
     return () => clearInterval(interval);
   }, [hasStarted]);
 
+  // Elapsed time for interval callbacks that must NOT re-subscribe every
+  // second (see the rival AI below: an elapsedSeconds dependency tears its
+  // interval down each tick, and a fill cadence slower than 1s never fires).
+  const elapsedSecondsRef = useRef(0);
+  useEffect(() => {
+    elapsedSecondsRef.current = elapsedSeconds;
+  }, [elapsedSeconds]);
+
   // 3. Rival Simulation AI
   useEffect(() => {
     if (!hasStarted) return;
@@ -157,7 +165,7 @@ export function DuelGameScreen({
           );
           if (
             matchingFilled.length >= obj.totalRegions &&
-            elapsedSeconds <= obj.deadlineSeconds &&
+            elapsedSecondsRef.current <= obj.deadlineSeconds &&
             !obj.isCompletedByRival
           ) {
             obj.isCompletedByRival = true;
@@ -182,7 +190,7 @@ export function DuelGameScreen({
     }, fillIntervalMs);
 
     return () => clearInterval(rivalInterval);
-  }, [hasStarted, elapsedSeconds, rival.speedFactor, artwork]);
+  }, [hasStarted, rival.speedFactor, artwork]);
 
   // Trigger brief floating toast
   const showToast = (message: string, avatar: string) => {
