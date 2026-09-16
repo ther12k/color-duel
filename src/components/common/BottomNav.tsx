@@ -1,92 +1,63 @@
-import { Home, Swords, Plus, Images, User } from 'lucide-react';
+import { Home, Images, Plus, Swords, User } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
-export type TabType = 'home' | 'arena' | 'create' | 'gallery' | 'profile';
+export type TabType = 'home' | 'duel' | 'gallery' | 'profile';
 export type NavTab = TabType;
 
 interface BottomNavProps {
   activeTab: TabType;
   onTabChange: (tab: TabType) => void;
+  /** Center "+" action — opens the Create flow. */
+  onCreate: () => void;
 }
 
-export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
+const TABS_LEFT: Array<{ id: TabType; label: string; icon: typeof Home }> = [
+  { id: 'home', label: 'Home', icon: Home },
+  { id: 'duel', label: 'Arena', icon: Swords },
+];
+
+const TABS_RIGHT: Array<{ id: TabType; label: string; icon: typeof Home }> = [
+  { id: 'gallery', label: 'Gallery', icon: Images },
+  { id: 'profile', label: 'Profile', icon: User },
+];
+
+export function BottomNav({ activeTab, onTabChange, onCreate }: BottomNavProps) {
+  const renderTab = ({ id, label, icon: Icon }: (typeof TABS_LEFT)[number]) => (
+    <button
+      key={id}
+      id={`nav-tab-${id}`}
+      onClick={() => onTabChange(id)}
+      className={cn(
+        'flex flex-col items-center justify-center flex-1 py-1.5 transition-colors cursor-pointer',
+        activeTab === id ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
+      )}
+    >
+      <Icon className={cn('w-[21px] h-[21px]', activeTab === id && 'fill-slate-900/10')} strokeWidth={activeTab === id ? 2.4 : 2} />
+      <span className={cn('text-[10px] font-sans mt-0.5', activeTab === id ? 'font-bold' : 'font-medium')}>
+        {label}
+      </span>
+    </button>
+  );
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-slate-200/80 max-w-md mx-auto px-3 py-1.5 flex items-center justify-around shadow-lg">
-      {/* Home */}
-      <button
-        id="nav-tab-home"
-        onClick={() => onTabChange('home')}
-        className={cn(
-          'flex flex-col items-center justify-center flex-1 py-1 transition-colors cursor-pointer',
-          activeTab === 'home' ? 'text-[#6366F1]' : 'text-slate-400 hover:text-slate-600'
-        )}
-      >
-        <Home className={cn('w-5 h-5 transition-transform', activeTab === 'home' && 'scale-110')} />
-        <span className="text-[11px] font-medium font-sans mt-0.5">Home</span>
-        {activeTab === 'home' && (
-          <span className="w-4 h-0.5 bg-[#6366F1] rounded-full mt-0.5" />
-        )}
-      </button>
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-slate-200/80 max-w-md mx-auto px-2 shadow-lg">
+      <div className="flex items-stretch justify-around">
+        {TABS_LEFT.map(renderTab)}
 
-      {/* Arena */}
-      <button
-        id="nav-tab-arena"
-        onClick={() => onTabChange('arena')}
-        className={cn(
-          'flex flex-col items-center justify-center flex-1 py-1 transition-colors cursor-pointer',
-          activeTab === 'arena' ? 'text-[#6366F1]' : 'text-slate-400 hover:text-slate-600'
-        )}
-      >
-        <Swords className={cn('w-5 h-5 transition-transform', activeTab === 'arena' && 'scale-110')} />
-        <span className="text-[11px] font-medium font-sans mt-0.5">Arena</span>
-        {activeTab === 'arena' && (
-          <span className="w-4 h-0.5 bg-[#6366F1] rounded-full mt-0.5" />
-        )}
-      </button>
+        {/* Center Create action */}
+        <div className="flex-1 flex justify-center items-end">
+          <button
+            id="nav-create-btn"
+            onClick={onCreate}
+            aria-label="Create challenge"
+            className="-mt-5 w-12 h-12 rounded-full bg-slate-900 text-white shadow-lg ring-4 ring-white/90 flex items-center justify-center active:scale-90 transition-transform cursor-pointer"
+          >
+            <Plus className="w-6 h-6" strokeWidth={2.5} />
+          </button>
+        </div>
 
-      {/* Create (Center Floating FAB) */}
-      <div className="flex-1 flex justify-center -mt-5">
-        <button
-          id="nav-tab-create"
-          onClick={() => onTabChange('create')}
-          className="w-13 h-13 rounded-full bg-gradient-to-tr from-[#7C3AED] via-[#8B5CF6] to-[#A855F7] text-white flex flex-col items-center justify-center shadow-lg shadow-purple-500/35 active:scale-95 transition-transform border-4 border-white cursor-pointer"
-        >
-          <Plus className="w-6 h-6 stroke-[2.5]" />
-          <span className="text-[9px] font-bold tracking-tight -mt-0.5">Create</span>
-        </button>
+        {TABS_RIGHT.map(renderTab)}
       </div>
-
-      {/* Gallery */}
-      <button
-        id="nav-tab-gallery"
-        onClick={() => onTabChange('gallery')}
-        className={cn(
-          'flex flex-col items-center justify-center flex-1 py-1 transition-colors cursor-pointer',
-          activeTab === 'gallery' ? 'text-[#6366F1]' : 'text-slate-400 hover:text-slate-600'
-        )}
-      >
-        <Images className={cn('w-5 h-5 transition-transform', activeTab === 'gallery' && 'scale-110')} />
-        <span className="text-[11px] font-medium font-sans mt-0.5">Gallery</span>
-        {activeTab === 'gallery' && (
-          <span className="w-4 h-0.5 bg-[#6366F1] rounded-full mt-0.5" />
-        )}
-      </button>
-
-      {/* Profile */}
-      <button
-        id="nav-tab-profile"
-        onClick={() => onTabChange('profile')}
-        className={cn(
-          'flex flex-col items-center justify-center flex-1 py-1 transition-colors cursor-pointer',
-          activeTab === 'profile' ? 'text-[#6366F1]' : 'text-slate-400 hover:text-slate-600'
-        )}
-      >
-        <User className={cn('w-5 h-5 transition-transform', activeTab === 'profile' && 'scale-110')} />
-        <span className="text-[11px] font-medium font-sans mt-0.5">Profile</span>
-        {activeTab === 'profile' && (
-          <span className="w-4 h-0.5 bg-[#6366F1] rounded-full mt-0.5" />
-        )}
-      </button>
     </nav>
   );
 }

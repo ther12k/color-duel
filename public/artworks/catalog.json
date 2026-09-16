@@ -1,0 +1,184 @@
+{
+  "artworks": [
+    {
+      "id": "mosslight-cottage",
+      "title": "Mosslight Cottage",
+      "manifest": "artworks/mosslight-cottage/artwork.json",
+      "thumbnail": "artworks/mosslight-cottage/card-lineart.svg",
+      "regionCount": 108,
+      "category": "Cozy",
+      "difficulty": "Easy"
+    },
+    {
+      "id": "lantern-cove",
+      "title": "Lantern Cove",
+      "manifest": "artworks/lantern-cove/artwork.json",
+      "thumbnail": "artworks/lantern-cove/card-lineart.svg",
+      "regionCount": 93,
+      "category": "Coast",
+      "difficulty": "Easy"
+    },
+    {
+      "id": "juniper-window",
+      "title": "Juniper Window",
+      "manifest": "artworks/juniper-window/artwork.json",
+      "thumbnail": "artworks/juniper-window/card-lineart.svg",
+      "regionCount": 94,
+      "category": "Animals",
+      "difficulty": "Easy"
+    },
+    {
+      "id": "petal-compass",
+      "title": "Petal Compass",
+      "manifest": "artworks/petal-compass/artwork.json",
+      "thumbnail": "artworks/petal-compass/card-lineart.svg",
+      "regionCount": 127,
+      "category": "Mandala",
+      "difficulty": "Easy"
+    },
+    {
+      "id": "sunset-conservatory",
+      "title": "Sunset Conservatory",
+      "manifest": "artworks/sunset-conservatory/artwork.json",
+      "thumbnail": "artworks/sunset-conservatory/numbered-preview.png",
+      "regionCount": 626,
+      "category": "Scenery",
+      "difficulty": "Hard"
+    },
+    {
+      "id": "cascade-treehouse",
+      "title": "Cascade Treehouse",
+      "manifest": "artworks/cascade-treehouse/artwork.json",
+      "thumbnail": "artworks/cascade-treehouse/numbered-preview.png",
+      "regionCount": 675,
+      "category": "Cozy",
+      "difficulty": "Hard"
+    },
+    {
+      "id": "springwater-pavilion",
+      "title": "Springwater Pavilion",
+      "manifest": "artworks/springwater-pavilion/artwork.json",
+      "thumbnail": "artworks/springwater-pavilion/numbered-preview.png",
+      "regionCount": 601,
+      "category": "Nature",
+      "difficulty": "Hard"
+    },
+    {
+      "id": "sapphire-lotus-court",
+      "title": "Sapphire Lotus Court",
+      "manifest": "artworks/sapphire-lotus-court/artwork.json",
+      "thumbnail": "artworks/sapphire-lotus-court/numbered-preview.png",
+      "regionCount": 656,
+      "category": "Decorative",
+      "difficulty": "Hard"
+    },
+    {
+      "id": "amberwing-guardian",
+      "title": "Amberwing Guardian",
+      "manifest": "artworks/amberwing-guardian/artwork.json",
+      "thumbnail": "artworks/amberwing-guardian/numbered-preview.png",
+      "regionCount": 687,
+      "category": "Fantasy",
+      "difficulty": "Hard"
+    },
+    {
+      "id": "whimsical-treehouse-valley-retreat-easy",
+      "title": "Whimsical Treehouse Valley Retreat",
+      "manifest": "artworks/whimsical-treehouse-valley-retreat/easy/artwork.json",
+      "thumbnail": "artworks/whimsical-treehouse-valley-retreat/card-lineart.svg",
+      "regionCount": 130,
+      "category": "Cozy",
+      "difficulty": "Easy"
+    },
+    {
+      "id": "serene-sakura-garden-pavilion-easy",
+      "title": "Serene Sakura Garden Pavilion",
+      "manifest": "artworks/serene-sakura-garden-pavilion/easy/artwork.json",
+      "thumbnail": "artworks/serene-sakura-garden-pavilion/card-lineart.svg",
+      "regionCount": 131,
+      "category": "Nature",
+      "difficulty": "Easy"
+    },
+    {
+      "id": "red-pandas-bamboo-sunrise-easy",
+      "title": "Red Panda's Bamboo Sunrise",
+      "manifest": "artworks/red-pandas-bamboo-sunrise/easy/artwork.json",
+      "thumbnail": "artworks/red-pandas-bamboo-sunrise/card-lineart.svg",
+      "regionCount": 134,
+      "category": "Animals",
+      "difficulty": "Easy"
+    },
+    {
+      "id": "friendly-turtle-coral-reefs-easy",
+      "title": "Friendly Turtle Coral Reefs",
+      "manifest": "artworks/friendly-turtle-coral-reefs/easy/artwork.json",
+      "thumbnail": "artworks/friendly-turtle-coral-reefs/card-lineart.svg",
+      "regionCount": 139,
+      "category": "Ocean",
+      "difficulty": "Easy"
+    },
+    {
+      "id": "cozy-bookstore-interior-easy",
+      "title": "Cozy Bookstore Interior",
+      "manifest": "artworks/cozy-bookstore-interior/easy/artwork.json",
+      "thumbnail": "artworks/cozy-bookstore-interior/card-lineart.svg",
+      "regionCount": 93,
+      "category": "Interior",
+      "difficulty": "Easy"
+    },
+    {
+      "id": "cosmic-observatory-night-easy",
+      "title": "Cosmic Observatory Night",
+      "manifest": "artworks/cosmic-observatory-night/easy/artwork.json",
+      "thumbnail": "artworks/cosmic-observatory-night/card-lineart.svg",
+      "regionCount": 86,
+      "category": "Sci-Fi",
+      "difficulty": "Easy"
+    },
+    {
+      "id": "desert-oasis-palace-easy",
+      "title": "Desert Oasis Palace",
+      "manifest": "artworks/desert-oasis-palace/easy/artwork.json",
+      "thumbnail": "artworks/desert-oasis-palace/card-lineart.svg",
+      "regionCount": 98,
+      "category": "Travel",
+      "difficulty": "Easy"
+    },
+    {
+      "id": "cozy-window-cat",
+      "title": "Cozy Window Cat",
+      "manifest": "artworks/cozy-window-cat/master/artwork.json",
+      "thumbnail": "artworks/cozy-window-cat/card-lineart.svg",
+      "regionCount": 720,
+      "category": "Animals",
+      "difficulty": "Hard"
+    },
+    {
+      "id": "flower-bouquet",
+      "title": "Flower Bouquet",
+      "manifest": "artworks/flower-bouquet/master/artwork.json",
+      "thumbnail": "artworks/flower-bouquet/card-lineart.svg",
+      "regionCount": 720,
+      "category": "Nature",
+      "difficulty": "Hard"
+    },
+    {
+      "id": "mountain-lake-cabin",
+      "title": "Mountain Lake Cabin",
+      "manifest": "artworks/mountain-lake-cabin/master/artwork.json",
+      "thumbnail": "artworks/mountain-lake-cabin/card-lineart.svg",
+      "regionCount": 720,
+      "category": "Nature",
+      "difficulty": "Hard"
+    },
+    {
+      "id": "seaside-lighthouse",
+      "title": "Seaside Lighthouse",
+      "manifest": "artworks/seaside-lighthouse/master/artwork.json",
+      "thumbnail": "artworks/seaside-lighthouse/card-lineart.svg",
+      "regionCount": 720,
+      "category": "Coastal",
+      "difficulty": "Hard"
+    }
+  ]
+}

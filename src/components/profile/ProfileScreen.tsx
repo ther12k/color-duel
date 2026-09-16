@@ -1,5 +1,10 @@
-import { Trophy, Flame, Award, Palette, CheckCircle2 } from 'lucide-react';
+import { useMemo } from 'react';
+import { Flame, Palette, Target, Percent, Swords } from 'lucide-react';
 import { Artwork, UserProfile } from '../../types/game';
+import { ArtworkCard } from '../common/ArtworkCard';
+import { SectionHeader } from '../common/SectionHeader';
+import { rankTitle } from '../../lib/utils';
+import { getAllProgress } from '../../lib/progressStore';
 
 interface ProfileScreenProps {
   user: UserProfile;
@@ -7,187 +12,141 @@ interface ProfileScreenProps {
   onSelectArtwork: (art: Artwork) => void;
 }
 
+/** Profile tab: identity card, match stats, then the player's works shelf. */
 export function ProfileScreen({ user, artworks, onSelectArtwork }: ProfileScreenProps) {
-  const completedList = artworks.filter((a) => user.completedArtworkIds.includes(a.id));
+  const progressByArtwork = useMemo(() => getAllProgress(), [artworks.length, user.matchesPlayed]);
+
+  const completed = artworks.filter((a) => user.completedArtworkIds.includes(a.id));
+  const inProgress = artworks.filter((a) => {
+    if (user.completedArtworkIds.includes(a.id)) return false;
+    const p = progressByArtwork[a.id];
+    return p && p.completedRegionIds.length > 0;
+  });
+  const notStarted = artworks.filter(
+    (a) => !user.completedArtworkIds.includes(a.id) && !inProgress.includes(a)
+  );
+
+  const xpPercent = Math.min(100, Math.round((user.xp / Math.max(1, user.xpForNextLevel)) * 100));
+  const winRate = user.matchesPlayed ? Math.round((user.matchesWon / user.matchesPlayed) * 100) : 0;
+
+  const stats = [
+    { icon: Swords, label: 'Matches', value: user.matchesPlayed, tone: 'text-amber-600 bg-amber-50' },
+    { icon: Target, label: 'Win Rate', value: `${winRate}%`, tone: 'text-indigo-600 bg-indigo-50' },
+    { icon: Flame, label: 'Streak', value: user.streakDays, tone: 'text-rose-600 bg-rose-50' },
+    { icon: Percent, label: 'Arena Pts', value: user.arenaPoints, tone: 'text-emerald-600 bg-emerald-50' },
+  ];
 
   return (
-    <div className="w-full max-w-md mx-auto min-h-screen bg-[#F4F6FB] pb-24 px-3.5 pt-3 space-y-3.5">
-      {/* Profile Header Card */}
-      <div className="bg-gradient-to-br from-[#8B5CF6] via-[#6366F1] to-[#4F46E5] rounded-3xl p-4 text-white shadow-lg relative overflow-hidden">
-        <div className="flex items-center gap-3.5">
-          <div className="relative">
-            <div className="w-16 h-16 rounded-full p-0.5 bg-gradient-to-tr from-amber-400 to-rose-400 shadow-md">
-              <img
-                src={user.avatar}
-                alt={user.name}
-                className="w-full h-full rounded-full object-cover"
-              />
-            </div>
-            <span className="absolute -bottom-1 -right-1 bg-amber-400 text-amber-950 font-display font-extrabold text-[10px] px-1.5 py-0.2 rounded-full shadow-xs">
+    <div className="w-full max-w-md mx-auto bg-[#F6F6F4] pb-28 px-3.5 pt-3 space-y-4">
+      {/* Profile hero */}
+      <div className="rounded-3xl bg-white border border-slate-200/70 shadow-xs p-4 flex items-center gap-4">
+        <img
+          src={user.avatar}
+          alt={user.name}
+          className="w-16 h-16 rounded-full object-cover ring-4 ring-slate-50 shadow-sm shrink-0"
+        />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h1 className="font-display font-black text-lg text-slate-900 leading-tight truncate">
+              {user.name}
+            </h1>
+            <span className="shrink-0 bg-amber-100 text-amber-800 font-display font-bold text-[10px] px-2 py-0.5 rounded-full">
               Lv. {user.level}
             </span>
           </div>
-
-          <div className="flex-1">
-            <h2 className="font-display font-black text-xl text-white">
-              {user.name}
-            </h2>
-            <p className="text-xs text-indigo-100 font-sans">
-              Master Colorist · Gold III
-            </p>
-            <div className="mt-1.5 flex items-center gap-3 text-xs">
-              <span className="flex items-center gap-1 font-bold text-amber-300">
-                🪙 {user.coins}
-              </span>
-              <span className="flex items-center gap-1 font-bold text-cyan-300">
-                💎 {user.gems}
-              </span>
-              <span className="flex items-center gap-1 font-bold text-indigo-200">
-                🏆 {user.arenaPoints}
-              </span>
+          <p className="text-[10.5px] text-slate-500 font-sans">
+            {rankTitle(user.level)} · {completed.length} artworks finished
+          </p>
+          <div className="mt-2 flex items-center gap-2">
+            <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-teal-400 to-sky-500 rounded-full transition-all"
+                style={{ width: `${xpPercent}%` }}
+              />
             </div>
-          </div>
-        </div>
-
-        {/* Level XP Progress */}
-        <div className="mt-4 pt-2 border-t border-white/20">
-          <div className="flex items-center justify-between text-xs font-sans mb-1 text-indigo-100">
-            <span>Level {user.level} Progress</span>
-            <span>
-              {user.xp} / {user.xpForNextLevel} XP
+            <span className="text-[9.5px] text-slate-400 font-sans tabular-nums shrink-0">
+              {user.xp}/{user.xpForNextLevel} XP
             </span>
           </div>
-          <div className="w-full h-2 bg-black/20 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-amber-400 rounded-full"
-              style={{ width: `${(user.xp / user.xpForNextLevel) * 100}%` }}
-            />
-          </div>
         </div>
       </div>
 
-      {/* Duel Combat Record Stats */}
-      <div className="bg-white rounded-3xl p-3.5 border border-slate-100 shadow-xs space-y-2.5">
-        <h3 className="font-display font-bold text-slate-800 text-xs uppercase tracking-wider">
-          Combat Record
-        </h3>
-
-        <div className="grid grid-cols-4 gap-2 text-center">
-          <div className="p-2 bg-slate-50 rounded-xl">
-            <div className="font-display font-black text-slate-800 text-base">
-              {user.matchesPlayed}
-            </div>
-            <div className="text-[9.5px] text-slate-400 font-sans mt-0.5">Played</div>
+      {/* Stats */}
+      <div className="grid grid-cols-4 gap-2">
+        {stats.map((s) => (
+          <div
+            key={s.label}
+            className="bg-white rounded-2xl border border-slate-200/70 shadow-xs p-2.5 flex flex-col items-center gap-1"
+          >
+            <span className={`w-7 h-7 rounded-xl flex items-center justify-center ${s.tone}`}>
+              <s.icon className="w-3.5 h-3.5" />
+            </span>
+            <span className="font-display font-black text-[15px] text-slate-800 leading-none tabular-nums">
+              {s.value}
+            </span>
+            <span className="text-[9px] text-slate-400 font-sans font-medium uppercase tracking-wide">
+              {s.label}
+            </span>
           </div>
-
-          <div className="p-2 bg-emerald-50 rounded-xl">
-            <div className="font-display font-black text-emerald-700 text-base">
-              {user.matchesWon}
-            </div>
-            <div className="text-[9.5px] text-emerald-600 font-sans mt-0.5">Won</div>
-          </div>
-
-          <div className="p-2 bg-indigo-50 rounded-xl">
-            <div className="font-display font-black text-indigo-700 text-base">
-              {Math.round((user.matchesWon / Math.max(1, user.matchesPlayed)) * 100)}%
-            </div>
-            <div className="text-[9.5px] text-indigo-600 font-sans mt-0.5">Win Rate</div>
-          </div>
-
-          <div className="p-2 bg-orange-50 rounded-xl">
-            <div className="font-display font-black text-orange-600 text-base flex items-center justify-center gap-0.5">
-              <span>{user.streakDays}</span>
-              <span>🔥</span>
-            </div>
-            <div className="text-[9.5px] text-orange-600 font-sans mt-0.5">Streak</div>
-          </div>
-        </div>
+        ))}
       </div>
 
-      {/* Badges / Mastery Showcase */}
-      <div className="bg-white rounded-3xl p-3.5 border border-slate-100 shadow-xs space-y-2.5">
-        <h3 className="font-display font-bold text-slate-800 text-xs uppercase tracking-wider">
-          Achievements & Badges
-        </h3>
-
-        <div className="grid grid-cols-2 gap-2">
-          <div className="flex items-center gap-2 p-2 bg-amber-50/70 border border-amber-200/60 rounded-xl">
-            <span className="text-xl">🎯</span>
-            <div>
-              <div className="font-display font-bold text-xs text-amber-950">
-                Deadline Master
-              </div>
-              <div className="text-[9.5px] text-amber-800/80 font-sans">
-                Completed 50 bonus targets
-              </div>
-            </div>
+      {/* In progress */}
+      <section>
+        <SectionHeader title="In Progress" />
+        {inProgress.length > 0 ? (
+          <div className="grid grid-cols-2 gap-3">
+            {inProgress.map((art) => {
+              const p = progressByArtwork[art.id];
+              return (
+                <ArtworkCard
+                  key={art.id}
+                  artwork={art}
+                  progressPercent={
+                    p.totalRegions > 0 ? (p.completedRegionIds.length / p.totalRegions) * 100 : 0
+                  }
+                  onClick={() => onSelectArtwork(art)}
+                />
+              );
+            })}
           </div>
-
-          <div className="flex items-center gap-2 p-2 bg-purple-50/70 border border-purple-200/60 rounded-xl">
-            <span className="text-xl">🧠</span>
-            <div>
-              <div className="font-display font-bold text-xs text-purple-950">
-                Memory Ace
-              </div>
-              <div className="text-[9.5px] text-purple-800/80 font-sans">
-                Won 10 Memory Duels
-              </div>
-            </div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-dashed border-slate-200 p-5 text-center">
+            <Palette className="w-5 h-5 text-slate-300 mx-auto" />
+            <p className="text-[12px] text-slate-400 font-sans mt-1">
+              Nothing on the easel. Pick an artwork and start coloring!
+            </p>
           </div>
+        )}
+      </section>
 
-          <div className="flex items-center gap-2 p-2 bg-blue-50/70 border border-blue-200/60 rounded-xl">
-            <span className="text-xl">⚡</span>
-            <div>
-              <div className="font-display font-bold text-xs text-blue-950">
-                Fast Finisher
-              </div>
-              <div className="text-[9.5px] text-blue-800/80 font-sans">
-                Sub-60s full clear
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 p-2 bg-emerald-50/70 border border-emerald-200/60 rounded-xl">
-            <span className="text-xl">🎨</span>
-            <div>
-              <div className="font-display font-bold text-xs text-emerald-950">
-                True Artisan
-              </div>
-              <div className="text-[9.5px] text-emerald-800/80 font-sans">
-                Perfect accuracy run
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Completed Artworks */}
-      <div className="bg-white rounded-3xl p-3.5 border border-slate-100 shadow-xs space-y-2.5">
-        <div className="flex items-center justify-between">
-          <h3 className="font-display font-bold text-slate-800 text-xs uppercase tracking-wider">
-            Completed Masterpieces ({completedList.length})
-          </h3>
-        </div>
-
-        <div className="grid grid-cols-3 gap-2">
-          {completedList.map((art) => (
-            <div
-              key={art.id}
-              onClick={() => onSelectArtwork(art)}
-              className="relative aspect-square rounded-xl overflow-hidden bg-slate-100 border border-slate-200 cursor-pointer group shadow-2xs"
-            >
-              <img
-                src={art.thumbnail}
-                alt={art.title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+      {/* Completed */}
+      {completed.length > 0 && (
+        <section>
+          <SectionHeader title="Completed" />
+          <div className="grid grid-cols-2 gap-3">
+            {completed.map((art) => (
+              <ArtworkCard
+                key={art.id}
+                artwork={art}
+                isCompleted
+                finished // earned reveal on the completed shelf
+                onClick={() => onSelectArtwork(art)}
               />
-              <div className="absolute top-1 right-1 bg-emerald-500 text-white rounded-full p-0.5 shadow-xs">
-                <CheckCircle2 className="w-3 h-3 fill-emerald-500 text-white" />
-              </div>
-            </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Not started */}
+      <section>
+        <SectionHeader title="Not Started" />
+        <div className="grid grid-cols-2 gap-3">
+          {notStarted.map((art) => (
+            <ArtworkCard key={art.id} artwork={art} onClick={() => onSelectArtwork(art)} />
           ))}
         </div>
-      </div>
+      </section>
     </div>
   );
 }

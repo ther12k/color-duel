@@ -10,10 +10,11 @@ import {
   LiveDuelToast,
   UserProfile,
 } from '../../types/game';
+import { recordRegionCompleted } from '../../lib/progressStore';
 import { DuelHUD } from './DuelHUD';
 import { BonusObjectivesBar } from './BonusObjectivesBar';
 import { ColoringCanvas } from './ColoringCanvas';
-import { AreaProgressBar } from './AreaProgressBar';
+import { ArtworkProgressCard } from './ArtworkProgressCard';
 import { PaletteBar } from './PaletteBar';
 import { LiveEventToast } from './LiveEventToast';
 import { PeekModal } from './PeekModal';
@@ -28,7 +29,7 @@ interface DuelGameScreenProps {
   onExit: () => void;
 }
 
-const MATCH_DURATION = 120; // 2 minutes
+const DEFAULT_MATCH_DURATION = 120; // 2 minutes for standard artwork sizes
 
 export function DuelGameScreen({
   artwork,
@@ -38,11 +39,20 @@ export function DuelGameScreen({
   onFinishMatch,
   onExit,
 }: DuelGameScreenProps) {
+  // Detailed packs (600+ regions) declare a longer budget via
+  // artwork.defaultDurationSeconds; a hard 2:00 would expire before the
+  // first color group is done.
+  const MATCH_DURATION = artwork.defaultDurationSeconds ?? DEFAULT_MATCH_DURATION;
   // Pre-match state
   const [hasStarted, setHasStarted] = useState(false);
 
   // Gameplay state
-  const [selectedColorIndex, setSelectedColorIndex] = useState(1);
+  // Default to the artwork's first palette number — imported assets may use
+  // arbitrary numbering (e.g. 8/13/20/28/31), so hardcoding 1 would leave every
+  // tap a mistake until the player manually selects a swatch.
+  const [selectedColorIndex, setSelectedColorIndex] = useState(artwork.palette[0]?.number ?? 1);
+  const [activePaint, setActivePaint] = useState(artwork.palette[0]?.hex ?? '#14B8A6');
+  const [customRegionColors, setCustomRegionColors] = useState<Record<string, string>>({});
   const [filledRegionIds, setFilledRegionIds] = useState<string[]>([]);
   const [playerScore, setPlayerScore] = useState(0);
   const [playerMistakes, setPlayerMistakes] = useState(0);
@@ -102,7 +112,7 @@ export function DuelGameScreen({
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(interval);
-          handleGameOver();
+          handleGameOverRef.current();
           return 0;
         }
         return prev - 1;
@@ -164,7 +174,7 @@ export function DuelGameScreen({
 
         // If rival completes all regions
         if (nextFilled.length === artwork.regions.length) {
-          setTimeout(() => handleGameOver(), 500);
+          setTimeout(() => handleGameOverRef.current(), 500);
         }
 
         return nextFilled;
@@ -191,12 +201,46 @@ export function DuelGameScreen({
     const clickX = e.clientX - rect.left;
     const clickY = e.clientY - rect.top;
 
+    // Studio is free-color: every unfilled region accepts current paint.
+    if (mode === 'studio') {
+      const nextFilled = [...filledRegionIds, region.id];
+      setFilledRegionIds(nextFilled);
+      setCustomRegionColors((prev) => ({ ...prev, [region.id]: activePaint }));
+      setPlayerScore((prev) => prev + 10);
+      recordRegionCompleted(artwork.id, region.id, artwork.regions.length);
+      setCorrectClickPos({ x: 200, y: 200 });
+      setTimeout(() => setCorrectClickPos(null), 700);
+      if (nextFilled.length === artwork.regions.length) {
+        setTimeout(() => handleGameOver(nextFilled.length, playerMistakes, playerBonuses), 600);
+      }
+      return;
+    }
+
     // Check if player selected the correct color!
     if (region.colorIndex === selectedColorIndex) {
       // CORRECT GUESS
       const nextFilled = [...filledRegionIds, region.id];
       setFilledRegionIds(nextFilled);
       setPlayerScore((prev) => prev + 10);
+      recordRegionCompleted(artwork.id, region.id, artwork.regions.length);
+
+      // Auto-advance: once this color group is exhausted, jump to the next
+      // one that still has unfilled regions so the player never stalls on a
+      // dead swatch (the counts are visible on the palette anyway).
+      const colorExhausted = artwork.regions
+        .filter((r) => r.colorIndex === selectedColorIndex)
+        .every((r) => nextFilled.includes(r.id));
+      if (colorExhausted) {
+        const nextColor = artwork.palette
+          .map((p) => p.number)
+          .filter(
+            (n) =>
+              n !== selectedColorIndex &&
+              artwork.regions.some((r) => r.colorIndex === n && !nextFilled.includes(r.id))
+          )
+          .sort((a, b) => a - b)[0];
+        if (nextColor !== undefined) setSelectedColorIndex(nextColor);
+      }
 
       // Trigger positive visual feedback
       setCorrectClickPos({ x: 200, y: 200 });
@@ -240,8 +284,12 @@ export function DuelGameScreen({
       if (nextFilled.length === artwork.regions.length) {
         setTimeout(() => handleGameOver(nextFilled.length, playerMistakes, playerBonuses + newBonuses), 600);
       }
+    } else if (mode === 'solo') {
+      // Relaxed mode: tapping a wrong-color region simply selects that
+      // region's color (zero penalty) — choosing colors must never punish.
+      setSelectedColorIndex(region.colorIndex);
     } else {
-      // WRONG COLOR
+      // WRONG COLOR (competitive duel modes)
       // Formula: -5 wrong-color attempts. Do not fill the region!
       setPlayerMistakes((m) => m + 1);
       setPlayerScore((s) => Math.max(0, s - 5));
@@ -260,7 +308,6 @@ export function DuelGameScreen({
   ) => {
     if (isGameOverRef.current) return;
     isGameOverRef.current = true;
-
     const totalPlayerClicks = finalPlayerCorrect + finalMistakes;
     const playerAccuracy =
       totalPlayerClicks > 0 ? Math.round((finalPlayerCorrect / totalPlayerClicks) * 100) : 100;
@@ -330,6 +377,13 @@ export function DuelGameScreen({
     onFinishMatch(result);
   };
 
+  // The game timer and rival interval closures outlive their render, so calling
+  // handleGameOver directly from them reads stale filled/mistake counts (a timeout
+  // would always report 0 filled). Route through a ref to always invoke the
+  // latest handler with current state defaults.
+  const handleGameOverRef = useRef(handleGameOver);
+  handleGameOverRef.current = handleGameOver;
+
   // 6. Action Boosts: Hint & Zoom
   const handleUseHint = () => {
     if (hintsLeft <= 0) return;
@@ -340,9 +394,10 @@ export function DuelGameScreen({
     }, 2500);
   };
 
-  const handleToggleZoom = () => {
-    setZoomLevel((z) => (z >= 2.5 ? 1 : z === 1 ? 1.8 : 2.8));
-  };
+  // Same cap the canvas computes internally; the −/+ card steps stay in range.
+  const maxZoom = artwork.zoomRecommended ?? 6;
+  const changeZoom = (delta: number) =>
+    setZoomLevel((z) => Math.min(maxZoom, Math.max(1, Math.round((z + delta) * 10) / 10)));
 
   // 7. Memory Duel Peek
   const handleTriggerPeek = () => {
@@ -370,7 +425,7 @@ export function DuelGameScreen({
   );
 
   return (
-    <div className="relative w-full max-w-md mx-auto min-h-screen bg-[#F4F6FB] flex flex-col justify-between select-none">
+    <div className="relative w-full max-w-md lg:max-w-6xl mx-auto min-h-screen lg:min-h-0 lg:h-[calc(100vh-2rem)] bg-[#F4F6FB] flex flex-col justify-between select-none">
       {/* Pre-Match Briefing Modal */}
       {!hasStarted && (
         <PreMatchBriefing
@@ -382,7 +437,7 @@ export function DuelGameScreen({
         />
       )}
 
-      {/* Top Duel HUD (Scores, Timer, Avatars) */}
+      {/* Top Duel HUD (Scores, Timer Ring) + Tactical Objectives */}
       <div className="w-full shrink-0">
         <DuelHUD
           user={user}
@@ -400,10 +455,12 @@ export function DuelGameScreen({
                 )
               : 100
           }
+          playerPercent={playerPercent}
+          rivalPercent={rivalPercent}
           onExit={onExit}
         />
 
-        {/* Bonus Objectives with Timed Deadlines */}
+        {/* Tactical Objectives with timed deadlines (duel modes only) */}
         {mode !== 'studio' && mode !== 'solo' && (
           <BonusObjectivesBar
             objectives={artwork.objectives}
@@ -412,35 +469,10 @@ export function DuelGameScreen({
             elapsedSeconds={elapsedSeconds}
           />
         )}
-
-        {/* Area Progress duel indicator */}
-        {mode !== 'studio' && mode !== 'solo' ? (
-          <AreaProgressBar
-            user={user}
-            rival={rival}
-            playerPercent={playerPercent}
-            rivalPercent={rivalPercent}
-          />
-        ) : (
-          <div className="px-3.5 py-1.5 bg-white/90 border-b border-slate-100 flex items-center justify-between shadow-2xs">
-            <span className="text-xs font-display font-bold text-slate-700">
-              Masterpiece Restoration
-            </span>
-            <div className="flex items-center gap-2">
-              <div className="w-28 h-2 bg-slate-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-purple-500 to-indigo-600 transition-all duration-300 rounded-full"
-                  style={{ width: `${playerPercent}%` }}
-                />
-              </div>
-              <span className="text-xs font-bold text-purple-700">{playerPercent}%</span>
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Center Canvas Stage */}
-      <div className="relative flex-1 flex items-center justify-center p-2.5 overflow-hidden">
+      {/* Center Canvas Stage — the canvas is its own rounded square card */}
+      <div className="relative flex-1 min-h-0 flex items-stretch justify-center px-2.5 py-1.5 sm:px-5 lg:px-8 lg:py-3 overflow-hidden">
         {/* Floating Live Rival Event Toast */}
         {mode !== 'solo' && <LiveEventToast toast={liveToast} />}
 
@@ -460,6 +492,7 @@ export function DuelGameScreen({
           artwork={artwork}
           filledRegionIds={filledRegionIds}
           selectedColorIndex={selectedColorIndex}
+          customRegionColors={customRegionColors}
           mode={mode}
           isPeeking={isPeeking}
           hintActiveForColor={hintActiveForColor}
@@ -467,21 +500,38 @@ export function DuelGameScreen({
           correctClickPos={correctClickPos}
           zoomLevel={zoomLevel}
           onRegionClick={handleRegionClick}
+          onSelectColor={setSelectedColorIndex}
           onZoomChange={setZoomLevel}
         />
       </div>
 
-      {/* Bottom Palette & Controls */}
+      {/* Bottom Palette & Progress Card */}
       <div className="w-full shrink-0">
         <PaletteBar
           palette={artwork.palette}
           selectedColorIndex={selectedColorIndex}
+          activePaint={activePaint}
+          isStudio={mode === 'studio'}
           remainingCountByColor={remainingCountByColor}
           hintsLeft={hintsLeft}
-          zoomLevel={zoomLevel}
-          onSelectColor={(idx) => setSelectedColorIndex(idx)}
+          onSelectColor={(idx) => {
+            setSelectedColorIndex(idx);
+            const paint = artwork.palette.find((item) => item.number === idx)?.hex;
+            if (paint) setActivePaint(paint);
+          }}
+          onSelectCustomColor={(hex) => {
+            setSelectedColorIndex(-1);
+            setActivePaint(hex);
+          }}
           onUseHint={handleUseHint}
-          onToggleZoom={handleToggleZoom}
+        />
+
+        <ArtworkProgressCard
+          filledCount={filledRegionIds.length}
+          totalCount={artwork.regions.length}
+          zoomLevel={zoomLevel}
+          maxZoom={maxZoom}
+          onZoomDelta={changeZoom}
         />
       </div>
     </div>

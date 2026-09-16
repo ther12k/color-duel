@@ -19,6 +19,7 @@ export function OutlinePreview({ artwork, onOpenFullPreview }: OutlinePreviewPro
             <path
               d={reg.path}
               fill="#FFFFFF"
+              fillRule={reg.fillRule}
               stroke="#334155"
               strokeWidth={1.8}
               strokeLinejoin="round"

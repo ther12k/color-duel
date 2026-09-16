@@ -1,4 +1,4 @@
-import { Check, Clock, AlertCircle } from 'lucide-react';
+import { Check, Coffee, Landmark, Lamp, Flame, Flower2, Gem, Soup, Star, Store } from 'lucide-react';
 import { BonusObjective } from '../../types/game';
 import { cn } from '../../lib/utils';
 
@@ -9,95 +9,92 @@ interface BonusObjectivesBarProps {
   elapsedSeconds: number;
 }
 
+const OBJECTIVE_ICONS = {
+  cup: Coffee,
+  lantern: Lamp,
+  bowl: Soup,
+  awning: Store,
+  dragon: Flame,
+  flower: Flower2,
+  window: Landmark,
+  star: Star,
+  gem: Gem,
+} as const;
+
+/** "Tactical Objectives" card — per-objective chips with mini progress bars and bonus values. */
 export function BonusObjectivesBar({
   objectives,
   completedObjectiveIds,
   objectiveProgress,
   elapsedSeconds,
 }: BonusObjectivesBarProps) {
+  if (objectives.length === 0) return null;
+
   return (
-    <div className="w-full bg-slate-50/90 border-b border-slate-200/70 px-2 py-1.5 overflow-x-auto">
-      <div className="flex items-center gap-1.5 min-w-full justify-between sm:justify-center">
-        {objectives.map((obj) => {
-          const isDone = completedObjectiveIds.includes(obj.id);
-          const currentCount = objectiveProgress[obj.id] || 0;
-          const secondsRemaining = Math.max(0, obj.deadlineSeconds - elapsedSeconds);
-          const isExpired = !isDone && secondsRemaining === 0;
+    <div className="px-2.5 pt-0.5">
+      <div className="bg-white rounded-2xl border border-slate-200/60 shadow-xs px-3 py-2.5">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[9px] font-sans font-bold tracking-[0.18em] text-slate-500 uppercase">
+            Tactical Objectives
+          </span>
+          <span className="text-[10px] font-sans font-semibold text-emerald-600">
+            + Bonus Points
+          </span>
+        </div>
 
-          // Icon representation
-          let iconEmoji = '🎯';
-          if (obj.iconType === 'lantern') iconEmoji = '🏮';
-          else if (obj.iconType === 'bowl') iconEmoji = '🍜';
-          else if (obj.iconType === 'awning') iconEmoji = '🎪';
-          else if (obj.iconType === 'dragon') iconEmoji = '🐉';
-          else if (obj.iconType === 'cup') iconEmoji = '☕';
-          else if (obj.iconType === 'flower') iconEmoji = '🌸';
-          else if (obj.iconType === 'star') iconEmoji = '⭐';
-          else if (obj.iconType === 'window') iconEmoji = '🏛️';
+        <div className="grid grid-cols-3 gap-2">
+          {objectives.map((obj) => {
+            const isDone = completedObjectiveIds.includes(obj.id);
+            const currentCount = Math.min(objectiveProgress[obj.id] || 0, obj.totalRegions);
+            const secondsRemaining = Math.max(0, obj.deadlineSeconds - elapsedSeconds);
+            const isExpired = !isDone && secondsRemaining === 0;
+            const Icon = OBJECTIVE_ICONS[obj.iconType] ?? Star;
+            const percent = (currentCount / Math.max(1, obj.totalRegions)) * 100;
 
-          return (
-            <div
-              key={obj.id}
-              className={cn(
-                'flex-1 min-w-[110px] max-w-[145px] p-1.5 rounded-xl border flex items-center justify-between gap-1.5 transition-all shadow-2xs',
-                isDone
-                  ? 'bg-emerald-50/90 border-emerald-300 text-emerald-950'
-                  : isExpired
-                  ? 'bg-slate-100/80 border-slate-200 text-slate-400 opacity-65'
-                  : secondsRemaining <= 10
-                  ? 'bg-amber-50 border-amber-300 text-amber-950 animate-pulse'
-                  : 'bg-white border-slate-200 text-slate-850'
-              )}
-            >
-              {/* Icon badge */}
+            return (
               <div
+                key={obj.id}
                 className={cn(
-                  'w-7 h-7 rounded-lg flex items-center justify-center text-base shrink-0 shadow-2xs',
+                  'p-2 rounded-xl border transition-all',
                   isDone
-                    ? 'bg-emerald-200/70'
+                    ? 'bg-emerald-50/80 border-emerald-200'
                     : isExpired
-                    ? 'bg-slate-200'
-                    : 'bg-indigo-50 border border-indigo-100'
+                    ? 'bg-slate-50 border-slate-200/70 opacity-55'
+                    : 'bg-slate-50/80 border-slate-200/70'
                 )}
               >
-                {iconEmoji}
-              </div>
-
-              {/* Title & Bonus points */}
-              <div className="flex-1 min-w-0">
-                <div className="font-display font-bold text-[10.5px] leading-tight truncate">
-                  {obj.title}
+                <div className="flex items-start gap-1.5">
+                  <Icon
+                    className={cn(
+                      'w-4 h-4 shrink-0 mt-px',
+                      isDone ? 'text-emerald-600' : isExpired ? 'text-slate-400' : 'text-slate-700'
+                    )}
+                  />
+                  <p className="text-[9.5px] font-sans font-semibold leading-tight text-slate-800 line-clamp-2">
+                    {obj.title}
+                  </p>
                 </div>
-                <div className="flex items-center gap-1 text-[9.5px]">
-                  <span className="font-bold text-amber-600">+{obj.bonusPoints}</span>
-                  {!isDone && !isExpired && (
-                    <span className="text-slate-400">· {secondsRemaining}s</span>
-                  )}
-                  {isExpired && (
-                    <span className="text-slate-400 font-medium">Expired</span>
-                  )}
+                <div className="mt-1.5 flex items-center gap-1">
+                  <span className="text-[9px] font-sans font-bold text-slate-600 tabular-nums shrink-0">
+                    {isDone ? <Check className="w-3 h-3 text-emerald-600 stroke-[3]" /> : `${currentCount}/${obj.totalRegions}`}
+                  </span>
+                  <div className="flex-1 h-1 bg-slate-200/80 rounded-full overflow-hidden">
+                    <div
+                      className={cn(
+                        'h-full rounded-full transition-all duration-300',
+                        isDone ? 'bg-emerald-500' : 'bg-teal-400'
+                      )}
+                      style={{ width: `${isDone ? 100 : percent}%` }}
+                    />
+                  </div>
+                  <span className="text-[9px] font-sans font-bold text-emerald-600 shrink-0">
+                    +{obj.bonusPoints}
+                  </span>
                 </div>
               </div>
-
-              {/* Status indicator */}
-              <div className="shrink-0 flex items-center justify-center">
-                {isDone ? (
-                  <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-xs">
-                    <Check className="w-3 h-3 stroke-[3]" />
-                  </div>
-                ) : isExpired ? (
-                  <div className="text-[10px] text-slate-400 font-bold">
-                    ✕
-                  </div>
-                ) : (
-                  <div className="w-5 h-5 rounded-full border-2 border-indigo-400/60 text-indigo-700 font-bold text-[9px] flex items-center justify-center bg-indigo-50/50">
-                    {currentCount}/{obj.totalRegions}
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );

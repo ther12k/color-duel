@@ -2,9 +2,11 @@ import { useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { Swords, Share2, Users, Home, RotateCcw, CheckCircle2, Sparkles, Star } from 'lucide-react';
 import { DuelResult, UserProfile } from '../../types/game';
+import { getProgress } from '../../lib/progressStore';
 import { MatchStatsTable } from './MatchStatsTable';
 import { WhyYouWonCard } from './WhyYouWonCard';
 import { RewardsEarnedCard } from './RewardsEarnedCard';
+import { ArtworkThumbnail } from '../common/ArtworkThumbnail';
 
 interface ResultsScreenProps {
   result: DuelResult;
@@ -40,6 +42,18 @@ export function ResultsScreen({
   const isWin = result.isWin;
   const isDraw = result.isDraw;
   const stars = result.starsEarned || (result.playerAccuracy >= 90 ? 3 : result.playerAccuracy >= 75 ? 2 : 1);
+
+  // The finished colored reveal is earned by completing every region (across
+  // sessions). An unfinished run — e.g. a solo timeout — leaves the artwork
+  // unspoiled: it renders as lineart with its real progress percentage.
+  const artworkProgress = getProgress(result.artwork.id);
+  const artworkComplete = artworkProgress?.isComplete === true;
+  const artworkTotal =
+    result.artwork.regions.length || result.artwork.declaredRegionCount || 1;
+  const artworkPercent = Math.min(
+    100,
+    Math.round(((artworkProgress?.completedRegionIds.length ?? 0) / artworkTotal) * 100)
+  );
 
   return (
     <div className="w-full max-w-md mx-auto min-h-screen bg-[#F4F6FB] pb-12 flex flex-col">
@@ -181,17 +195,32 @@ export function ResultsScreen({
           {/* Finished Artwork Preview */}
           <div className="sm:col-span-2 bg-white rounded-2xl p-3 border border-slate-100 shadow-xs flex flex-col justify-between">
             <h4 className="font-display font-bold text-slate-800 text-xs uppercase tracking-wider mb-2">
-              Completed Artwork
+              {artworkComplete ? 'Completed Artwork' : 'Artwork Progress'}
             </h4>
             <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-slate-100 border border-slate-200">
-              <img
-                src={result.artwork.paintingBackground || result.artwork.thumbnail}
-                alt={result.artwork.title}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute bottom-2 right-2 bg-emerald-500 text-white font-display font-bold text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
+              {result.artwork.paintingBackground ? (
+                <img
+                  src={result.artwork.paintingBackground}
+                  alt={result.artwork.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                /* Vector artworks render their region geometry: the finished
+                   palette paints only once every region is colored, otherwise
+                   pure lineart so future sessions stay unspoiled. */
+                <ArtworkThumbnail
+                  artwork={result.artwork}
+                  finished={artworkComplete}
+                  className="absolute inset-0"
+                />
+              )}
+              <div
+                className={`absolute bottom-2 right-2 text-white font-display font-bold text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm ${
+                  artworkComplete ? 'bg-emerald-500' : 'bg-slate-700/85'
+                }`}
+              >
                 <CheckCircle2 className="w-3 h-3" />
-                <span>100%</span>
+                <span>{artworkPercent}%</span>
               </div>
             </div>
             <span className="font-display font-bold text-slate-700 text-xs truncate mt-2">

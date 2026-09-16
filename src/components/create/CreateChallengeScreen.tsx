@@ -1,15 +1,16 @@
 import { useState } from 'react';
-import { Sparkles, Users, ArrowRight, Share2, Check } from 'lucide-react';
+import { Sparkles, Users, ArrowRight, Share2, Check, ChevronLeft } from 'lucide-react';
 import { Artwork, GameMode } from '../../types/game';
 import { PromptInput } from './PromptInput';
 import { QuickStyles } from './QuickStyles';
 import { OutlinePreview } from './OutlinePreview';
 import { ModePicker, ChallengeModeType } from './ModePicker';
 import { DifficultyPicker, DifficultyType } from './DifficultyPicker';
-import { ARTWORKS } from '../../data/artworks';
 
 interface CreateChallengeScreenProps {
+  artworks: Artwork[];
   onLaunchChallenge: (artwork: Artwork, mode: GameMode) => void;
+  onExit?: () => void;
 }
 
 const SURPRISE_PROMPTS = [
@@ -20,7 +21,7 @@ const SURPRISE_PROMPTS = [
   'A warm ramen noodle shop with glowing paper lanterns at twilight',
 ];
 
-export function CreateChallengeScreen({ onLaunchChallenge }: CreateChallengeScreenProps) {
+export function CreateChallengeScreen({ artworks, onLaunchChallenge, onExit }: CreateChallengeScreenProps) {
   const [prompt, setPrompt] = useState('A sleepy dragon running a cozy coffee shop');
   const [style, setStyle] = useState('cozy');
   const [mode, setMode] = useState<ChallengeModeType>('number');
@@ -29,9 +30,8 @@ export function CreateChallengeScreen({ onLaunchChallenge }: CreateChallengeScre
   const [friendModalOpen, setFriendModalOpen] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
 
-  // Select reference artwork (e.g. sleepy dragon cafe)
-  const currentPreviewArtwork =
-    ARTWORKS.find((a) => a.id === 'sleepy-dragon-cafe') || ARTWORKS[0];
+  // Select reference artwork used to preview the generated challenge
+  const currentPreviewArtwork = artworks[0];
 
   const handleSurpriseMe = () => {
     const random = SURPRISE_PROMPTS[Math.floor(Math.random() * SURPRISE_PROMPTS.length)];
@@ -39,6 +39,7 @@ export function CreateChallengeScreen({ onLaunchChallenge }: CreateChallengeScre
   };
 
   const handleGenerate = () => {
+    if (!currentPreviewArtwork) return;
     setIsGenerating(true);
     setTimeout(() => {
       setIsGenerating(false);
@@ -50,16 +51,28 @@ export function CreateChallengeScreen({ onLaunchChallenge }: CreateChallengeScre
   };
 
   return (
-    <div className="w-full max-w-md mx-auto min-h-screen bg-[#F4F6FB] pb-24 px-3.5 pt-3 space-y-3.5">
-      {/* Title Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="font-display font-black text-2xl text-slate-800 leading-tight">
-            Create Your Own Challenge <span className="text-amber-500">✨</span>
-          </h1>
-          <p className="text-xs text-slate-500 font-sans mt-0.5">
-            Turn your imagination into a color-by-number duel!
-          </p>
+    <div className="w-full max-w-md mx-auto min-h-screen bg-[#F6F6F4] pb-10 px-3.5 pt-3 space-y-3.5">
+      {/* Back + Title Header */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-start gap-1.5 min-w-0">
+          {onExit && (
+            <button
+              type="button"
+              onClick={onExit}
+              aria-label="Back"
+              className="w-9 h-9 mt-0.5 -ml-1.5 rounded-xl bg-white border border-slate-200/80 flex items-center justify-center hover:bg-slate-50 cursor-pointer transition-colors shrink-0"
+            >
+              <ChevronLeft className="w-4.5 h-4.5 text-slate-700" />
+            </button>
+          )}
+          <div>
+            <h1 className="font-display font-black text-2xl text-slate-800 leading-tight">
+              Create Your Own Challenge <span className="text-amber-500">✨</span>
+            </h1>
+            <p className="text-xs text-slate-500 font-sans mt-0.5">
+              Turn your imagination into a color-by-number duel!
+            </p>
+          </div>
         </div>
 
         {/* AI Magic Badge */}
@@ -86,7 +99,13 @@ export function CreateChallengeScreen({ onLaunchChallenge }: CreateChallengeScre
           <span className="font-display font-bold text-slate-800 text-xs">
             Artwork Outline Preview
           </span>
-          <OutlinePreview artwork={currentPreviewArtwork} />
+          {currentPreviewArtwork ? (
+            <OutlinePreview artwork={currentPreviewArtwork} />
+          ) : (
+            <div className="aspect-square w-full rounded-2xl bg-slate-50 border border-dashed border-slate-200 flex items-center justify-center text-[10.5px] text-slate-400 font-sans">
+              Loading artwork...
+            </div>
+          )}
         </div>
       </div>
 

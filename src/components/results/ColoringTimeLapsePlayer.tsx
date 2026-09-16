@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Play, Pause, RotateCcw, FastForward, Maximize2, Minimize2, Sparkles, CheckCircle2 } from 'lucide-react';
 import { Artwork, DuelResult } from '../../types/game';
+import { finishedFillFor, parseViewBox } from '../../lib/paints';
+import { ArtworkGradientDefs, ArtworkDetailLines } from '../common/ArtworkPaint';
 
 interface ColoringTimeLapsePlayerProps {
   artwork: Artwork;
@@ -130,16 +132,24 @@ export function ColoringTimeLapsePlayer({
             <filter id="bloom-flash" x="-20%" y="-20%" width="140%" height="140%">
               <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#F59E0B" floodOpacity="0.8" />
             </filter>
+            <ArtworkGradientDefs artwork={artwork} />
           </defs>
 
           {/* Crisp Paper White Background */}
-          <rect width="500" height="500" fill="#FFFFFF" />
+          <rect
+            x={parseViewBox(artwork.viewBox).x}
+            y={parseViewBox(artwork.viewBox).y}
+            width={parseViewBox(artwork.viewBox).w}
+            height={parseViewBox(artwork.viewBox).h}
+            fill={artwork.backgroundColor || '#FFFFFF'}
+          />
 
           {/* Regions Rendered */}
           {artwork.regions.map((region) => {
             const isFilled = visibleRegionIds.has(region.id);
-            const paletteItem = artwork.palette.find((p) => p.number === region.colorIndex);
-            const fillColor = isFilled ? paletteItem?.hex || '#6366F1' : '#FFFFFF';
+            const fillColor = isFilled
+              ? finishedFillFor(artwork, region.colorIndex)
+              : '#FFFFFF';
 
             // Check if this region was just colored in this exact step
             const isLatestStep =
@@ -150,6 +160,7 @@ export function ColoringTimeLapsePlayer({
                 <path
                   d={region.path}
                   fill={fillColor}
+                  fillRule={region.fillRule}
                   stroke="#18181B"
                   strokeWidth={1.8}
                   strokeLinejoin="round"
@@ -177,6 +188,9 @@ export function ColoringTimeLapsePlayer({
               </g>
             );
           })}
+
+          {/* Decorative Detail Linework */}
+          <ArtworkDetailLines artwork={artwork} />
         </svg>
 
         {/* Completion Celebration Overlay Banner */}
