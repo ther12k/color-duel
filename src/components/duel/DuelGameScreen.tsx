@@ -10,7 +10,7 @@ import {
   LiveDuelToast,
   UserProfile,
 } from '../../types/game';
-import { recordRegionCompleted } from '../../lib/progressStore';
+import { getProgress, recordRegionCompleted } from '../../lib/progressStore';
 import { DuelHUD } from './DuelHUD';
 import { BonusObjectivesBar } from './BonusObjectivesBar';
 import { ColoringCanvas } from './ColoringCanvas';
@@ -52,8 +52,19 @@ export function DuelGameScreen({
   // tap a mistake until the player manually selects a swatch.
   const [selectedColorIndex, setSelectedColorIndex] = useState(artwork.palette[0]?.number ?? 1);
   const [activePaint, setActivePaint] = useState(artwork.palette[0]?.hex ?? '#14B8A6');
-  const [customRegionColors, setCustomRegionColors] = useState<Record<string, string>>({});
-  const [filledRegionIds, setFilledRegionIds] = useState<string[]>([]);
+  // Resume: the canvas hydrates from the progress store ONCE at mount. A
+  // same-version record restores the completed regions AND the free-color
+  // paints the artist chose (studio mode renders them as region fills); a
+  // version mismatch reads as no progress (the store's identity contract),
+  // so nothing leaks onto re-shipped content. Profile/Home percent badges
+  // were never enough — the player must SEE their painting come back.
+  const storedProgress = getProgress(artwork.id, artwork.contentVersion);
+  const [customRegionColors, setCustomRegionColors] = useState<Record<string, string>>(
+    storedProgress?.customRegionColors ?? {}
+  );
+  const [filledRegionIds, setFilledRegionIds] = useState<string[]>(
+    storedProgress?.completedRegionIds ?? []
+  );
   const [playerScore, setPlayerScore] = useState(0);
   const [playerMistakes, setPlayerMistakes] = useState(0);
   const [playerBonuses, setPlayerBonuses] = useState(0);
@@ -215,7 +226,11 @@ export function DuelGameScreen({
       setFilledRegionIds(nextFilled);
       setCustomRegionColors((prev) => ({ ...prev, [region.id]: activePaint }));
       setPlayerScore((prev) => prev + 10);
-      recordRegionCompleted(artwork.id, region.id, artwork.regions.length, artwork.contentVersion);
+      // The artist's paint choice is not derivable from the palette — it
+      // rides with the completion so a resume repaints it.
+      recordRegionCompleted(artwork.id, region.id, artwork.regions.length, artwork.contentVersion, {
+        customColor: activePaint,
+      });
       setCorrectClickPos({ x: 200, y: 200 });
       setTimeout(() => setCorrectClickPos(null), 700);
       if (nextFilled.length === artwork.regions.length) {

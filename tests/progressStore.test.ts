@@ -95,4 +95,29 @@ describe('progressStore version identity', () => {
     recordRegionCompleted(ID, 'r-1', 1, '2.0.0');
     expect(Object.keys(getAllProgress())).toEqual([ID]);
   });
+
+  test('free-color paint rides with its region and survives later same-version writes', () => {
+    recordRegionCompleted(ID, 'r-1', 3, '1.0.0', { customColor: '#B4D4AA' });
+    const p = getProgress(ID, '1.0.0');
+    expect(p?.customRegionColors).toEqual({ 'r-1': '#B4D4AA' });
+    // A different region completed later must not drop the earlier paint…
+    recordRegionCompleted(ID, 'r-2', 3, '1.0.0');
+    expect(getProgress(ID, '1.0.0')?.customRegionColors).toEqual({ 'r-1': '#B4D4AA' });
+    // …and a repaint of the same region overrides it.
+    recordRegionCompleted(ID, 'r-1', 3, '1.0.0', { customColor: '#FF8800' });
+    expect(getProgress(ID, '1.0.0')?.customRegionColors).toEqual({ 'r-1': '#FF8800' });
+  });
+
+  test('free-color paints never cross a content version (same identity contract)', () => {
+    recordRegionCompleted(ID, 'r-1', 2, '1.0.0', { customColor: '#B4D4AA' });
+    // The re-shipped version starts fresh: no completion AND no paint leak.
+    const v2 = recordRegionCompleted(ID, 'r-1', 2, '2.0.0');
+    expect(v2.customRegionColors).toBeUndefined();
+    expect(v2.completedRegionIds).toEqual(['r-1']);
+  });
+
+  test('number-mode writes add no customRegionColors key at all', () => {
+    recordRegionCompleted(ID, 'r-1', 1, '1.0.0');
+    expect(getProgress(ID, '1.0.0')).not.toHaveProperty('customRegionColors');
+  });
 });

@@ -24,6 +24,11 @@ export interface ArtworkProgress {
    *  record from before versioning; it only ever matches unversioned
    *  content). */
   contentVersion?: string;
+  /** Free-color paints the artist CHOSE (studio mode only). Not derivable
+   *  from the package palette, so they must persist with the completion —
+   *  a resume that restores "completed" but repaints the artist's choices
+   *  with nothing is not a resume. Keyed by region id. */
+  customRegionColors?: Record<string, string>;
 }
 
 interface ProgressData {
@@ -101,7 +106,8 @@ export function recordRegionCompleted(
   artworkId: string,
   regionId: string,
   totalRegions: number,
-  contentVersion?: string
+  contentVersion?: string,
+  opts?: { customColor?: string }
 ): ArtworkProgress {
   const data = load();
   const existing = data.artworks[artworkId];
@@ -114,6 +120,13 @@ export function recordRegionCompleted(
       ? carried.completedRegionIds
       : [...carried.completedRegionIds, regionId]
     : [regionId];
+  // Free-color paints ride with their region: carried per version, extended
+  // (or overridden for a repaint) by this write, dropped on version change.
+  const customRegionColors = carried?.customRegionColors
+    ? { ...carried.customRegionColors }
+    : {};
+  if (opts?.customColor) customRegionColors[regionId] = opts.customColor;
+  const hasCustomColors = Object.keys(customRegionColors).length > 0;
   const progress: ArtworkProgress = {
     artworkId,
     completedRegionIds,
@@ -121,6 +134,7 @@ export function recordRegionCompleted(
     isComplete: completedRegionIds.length >= totalRegions,
     updatedAt: new Date().toISOString(),
     ...(contentVersion !== undefined ? { contentVersion } : {}),
+    ...(hasCustomColors ? { customRegionColors } : {}),
   };
   data.artworks[artworkId] = progress;
   data.playDates[artworkId] = todayIso();
