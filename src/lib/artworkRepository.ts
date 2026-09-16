@@ -151,11 +151,26 @@ export async function loadArtworkPlayData(artwork: Artwork): Promise<Artwork> {
 export async function loadArtworkPack(): Promise<Artwork[]> {
   const catalog = await fetchJson<{ artworks: ArtworkCatalogEntry[] }>('/artworks/catalog.json');
 
-  const parsed = await Promise.all(
+  // Entries load independently: one broken row (a catalog entry whose package
+  // files are absent — per-artwork content is a local concern, see
+  // .gitignore) is skipped with a warning instead of rejecting the whole
+  // gallery, so a catalog + golden-pack clone still plays everything present.
+  const settled = await Promise.allSettled(
     catalog.artworks.map(async (entry) => {
       if (entry.manifest) return loadVectorStub(entry);
       return loadImagePackage(entry);
     })
   );
+  const parsed: Artwork[] = [];
+  settled.forEach((result, i) => {
+    if (result.status === 'fulfilled') {
+      parsed.push(result.value);
+    } else {
+      console.warn(
+        `[artworks] skipping catalog entry "${catalog.artworks[i]?.id ?? i}":`,
+        result.reason instanceof Error ? result.reason.message : result.reason
+      );
+    }
+  });
   return parsed;
 }
