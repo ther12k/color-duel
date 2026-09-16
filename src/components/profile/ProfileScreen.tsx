@@ -4,7 +4,7 @@ import { Artwork, UserProfile } from '../../types/game';
 import { ArtworkCard } from '../common/ArtworkCard';
 import { SectionHeader } from '../common/SectionHeader';
 import { rankTitle } from '../../lib/utils';
-import { getAllProgress } from '../../lib/progressStore';
+import { progressMapFor } from '../../lib/progressStore';
 
 interface ProfileScreenProps {
   user: UserProfile;
@@ -14,7 +14,7 @@ interface ProfileScreenProps {
 
 /** Profile tab: identity card, match stats, then the player's works shelf. */
 export function ProfileScreen({ user, artworks, onSelectArtwork }: ProfileScreenProps) {
-  const progressByArtwork = useMemo(() => getAllProgress(), [artworks.length, user.matchesPlayed]);
+  const progressByArtwork = useMemo(() => progressMapFor(artworks), [artworks, user.matchesPlayed]);
 
   const completed = artworks.filter((a) => user.completedArtworkIds.includes(a.id));
   const inProgress = artworks.filter((a) => {

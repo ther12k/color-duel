@@ -46,7 +46,7 @@ export function ResultsScreen({
   // The finished colored reveal is earned by completing every region (across
   // sessions). An unfinished run — e.g. a solo timeout — leaves the artwork
   // unspoiled: it renders as lineart with its real progress percentage.
-  const artworkProgress = getProgress(result.artwork.id);
+  const artworkProgress = getProgress(result.artwork.id, result.artwork.contentVersion);
   const artworkComplete = artworkProgress?.isComplete === true;
   const artworkTotal =
     result.artwork.regions.length || result.artwork.declaredRegionCount || 1;

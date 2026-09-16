@@ -4,6 +4,13 @@
  * plus a lightweight play log (artworkId -> last played date) that powers the
  * Daily tab's month calendar. Persisted to localStorage; failures (private
  * browsing, quota) degrade silently to in-memory state.
+ *
+ * Progress identity is (artworkId, contentVersion): a record applies ONLY to
+ * the pack version it was played on. When a package ships a new version, its
+ * old completion never silently carries over — regions may have been cut,
+ * merged or renumbered, so a stale "complete" would be a lie. Reading with a
+ * different version yields nothing; writing to a different version starts a
+ * fresh record (and replaces the old one — versions move forward).
  */
 
 export interface ArtworkProgress {
@@ -13,6 +20,10 @@ export interface ArtworkProgress {
   /** True once every playable region is completed. */
   isComplete: boolean;
   updatedAt: string;
+  /** Pack version this progress was recorded against (undefined = legacy
+   *  record from before versioning; it only ever matches unversioned
+   *  content). */
+  contentVersion?: string;
 }
 
 interface ProgressData {
@@ -52,10 +63,36 @@ function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-export function getProgress(artworkId: string): ArtworkProgress | undefined {
-  return load().artworks[artworkId];
+/** True when `record` belongs to content with the given version. */
+function sameVersion(record: ArtworkProgress, contentVersion?: string): boolean {
+  return record.contentVersion === (contentVersion ?? undefined);
 }
 
+/** Identity-checked read: the record for `artworkId`, but only if it was
+ *  recorded against `contentVersion`. A record from any other version (or a
+ *  legacy record asked about versioned content) reads as no progress. */
+export function getProgress(artworkId: string, contentVersion?: string): ArtworkProgress | undefined {
+  const record = load().artworks[artworkId];
+  return record && sameVersion(record, contentVersion) ? record : undefined;
+}
+
+/** Identity-checked map for catalog consumers: only records matching each
+ *  artwork's own content version are returned. */
+export function progressMapFor(
+  artworks: ReadonlyArray<{ id: string; contentVersion?: string }>
+): Record<string, ArtworkProgress> {
+  const all = load().artworks;
+  const out: Record<string, ArtworkProgress> = {};
+  for (const art of artworks) {
+    const record = all[art.id];
+    if (record && sameVersion(record, art.contentVersion)) out[art.id] = record;
+  }
+  return out;
+}
+
+/** RAW records by artworkId, regardless of content version. Only for
+ *  storage-level views (debug/export); gameplay reads must go through
+ *  getProgress / progressMapFor so versions cannot be mixed. */
 export function getAllProgress(): Record<string, ArtworkProgress> {
   return load().artworks;
 }
@@ -63,14 +100,19 @@ export function getAllProgress(): Record<string, ArtworkProgress> {
 export function recordRegionCompleted(
   artworkId: string,
   regionId: string,
-  totalRegions: number
+  totalRegions: number,
+  contentVersion?: string
 ): ArtworkProgress {
   const data = load();
   const existing = data.artworks[artworkId];
-  const completedRegionIds = existing
-    ? existing.completedRegionIds.includes(regionId)
-      ? existing.completedRegionIds
-      : [...existing.completedRegionIds, regionId]
+  // Progress never crosses content versions: a record from another version
+  // does not seed the new content's completion — the new version starts
+  // fresh and replaces the old record.
+  const carried = existing && sameVersion(existing, contentVersion) ? existing : undefined;
+  const completedRegionIds = carried
+    ? carried.completedRegionIds.includes(regionId)
+      ? carried.completedRegionIds
+      : [...carried.completedRegionIds, regionId]
     : [regionId];
   const progress: ArtworkProgress = {
     artworkId,
@@ -78,6 +120,7 @@ export function recordRegionCompleted(
     totalRegions,
     isComplete: completedRegionIds.length >= totalRegions,
     updatedAt: new Date().toISOString(),
+    ...(contentVersion !== undefined ? { contentVersion } : {}),
   };
   data.artworks[artworkId] = progress;
   data.playDates[artworkId] = todayIso();

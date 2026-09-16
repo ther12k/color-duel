@@ -136,6 +136,10 @@ export interface Artwork {
   underpaintingUrl?: string;
   // Lazy play data for stub artworks (regions/paint load when a match starts).
   dataUrls?: { manifest: string; regions?: string; paint?: string };
+  // Pack version this content was shipped as (artwork.json `version`). Progress
+  // is recorded against it and never applied across versions — see
+  // src/lib/progressStore.ts.
+  contentVersion?: string;
   /** Authored difficulty variants available for this picture. */
   variants?: ArtworkVariant[];
   declaredRegionCount?: number;

@@ -124,7 +124,7 @@ export default function App() {
       // An artwork joins the completed shelf only once every playable region
       // is actually colored — progressStore dedupes region IDs across sessions,
       // so a timed-out session can never mark an artwork complete.
-      const artworkComplete = getProgress(result.artwork.id)?.isComplete === true;
+      const artworkComplete = getProgress(result.artwork.id, result.artwork.contentVersion)?.isComplete === true;
       const nextCompleted = artworkComplete
         ? prev.completedArtworkIds.includes(result.artwork.id)
           ? prev.completedArtworkIds

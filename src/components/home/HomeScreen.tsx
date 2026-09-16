@@ -13,7 +13,7 @@ import { Artwork, UserProfile } from '../../types/game';
 import { ArtworkThumbnail } from '../common/ArtworkThumbnail';
 import { SectionHeader } from '../common/SectionHeader';
 import { cn } from '../../lib/utils';
-import { getAllProgress } from '../../lib/progressStore';
+import { progressMapFor } from '../../lib/progressStore';
 import { groupArtworkFamilies } from '../../lib/artworkFamilies';
 import { ArtworkLevelPicker } from '../common/ArtworkLevelPicker';
 import { ArtworkFamily } from '../../lib/artworkFamilies';
@@ -61,7 +61,7 @@ export function HomeScreen({
   onGoDaily,
   onGoProfile,
 }: HomeScreenProps) {
-  const progressByArtwork = useMemo(() => getAllProgress(), [artworks.length, user.matchesPlayed]);
+  const progressByArtwork = useMemo(() => progressMapFor(artworks), [artworks, user.matchesPlayed]);
   const families = useMemo(() => groupArtworkFamilies(artworks), [artworks]);
   const [pickerFamily, setPickerFamily] = useState<ArtworkFamily | null>(null);
   const chooseArtwork = (artwork: Artwork) => {

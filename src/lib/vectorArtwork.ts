@@ -259,6 +259,9 @@ export function parseVectorPackage(
   return {
     id: loadOptions.id ?? manifest.id,
     title: loadOptions.title ?? manifest.title,
+    // Progress identity: completions are recorded against this pack version
+    // and never applied across versions (progressStore contract).
+    contentVersion: manifest.version,
     subtitle: manifest.description,
     category: loadOptions.category ?? mapCategory(manifest.category),
     likes: loadOptions.likes ?? '0',

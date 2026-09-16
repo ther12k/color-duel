@@ -207,7 +207,7 @@ export function DuelGameScreen({
       setFilledRegionIds(nextFilled);
       setCustomRegionColors((prev) => ({ ...prev, [region.id]: activePaint }));
       setPlayerScore((prev) => prev + 10);
-      recordRegionCompleted(artwork.id, region.id, artwork.regions.length);
+      recordRegionCompleted(artwork.id, region.id, artwork.regions.length, artwork.contentVersion);
       setCorrectClickPos({ x: 200, y: 200 });
       setTimeout(() => setCorrectClickPos(null), 700);
       if (nextFilled.length === artwork.regions.length) {
@@ -222,7 +222,7 @@ export function DuelGameScreen({
       const nextFilled = [...filledRegionIds, region.id];
       setFilledRegionIds(nextFilled);
       setPlayerScore((prev) => prev + 10);
-      recordRegionCompleted(artwork.id, region.id, artwork.regions.length);
+      recordRegionCompleted(artwork.id, region.id, artwork.regions.length, artwork.contentVersion);
 
       // Auto-advance: once this color group is exhausted, jump to the next
       // one that still has unfilled regions so the player never stalls on a
